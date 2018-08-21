@@ -1,6 +1,26 @@
 import { Blot, Parent, Formattable } from './blot';
 import * as Registry from '../../registry';
 
+const IS_CLONE_NODE_BROKEN = (() => {
+  const original = document.createElement('div');
+  original.style.backgroundColor = '#ff5';
+  const clone = <HTMLElement>original.cloneNode(false);
+  // This will overwrite backgroundColor of the original in IE11
+  clone.style.backgroundColor = '';
+  return !original.style.backgroundColor;
+})();
+
+function safeCloneNode(source: Node, deep: boolean = false): Node {
+  const clone = source.cloneNode(deep);
+  if (!IS_CLONE_NODE_BROKEN) {
+    return clone;
+  }
+  const container = document.createElement('div');
+  container.appendChild(clone);
+  const sandbox = new DOMParser().parseFromString(container.innerHTML, 'text/html');
+  return sandbox.body.childNodes[0];
+}
+
 class ShadowBlot implements Blot {
   static blotName = 'abstract';
   static className: string;
@@ -61,7 +81,7 @@ class ShadowBlot implements Blot {
   }
 
   clone(): Blot {
-    let domNode = this.domNode.cloneNode(false);
+    let domNode = safeCloneNode(this.domNode, false);
     return Registry.create(domNode);
   }
 
