@@ -200,6 +200,14 @@ class ContainerBlot extends ShadowBlot implements Parent {
         removedNodes.push.apply(removedNodes, mutation.removedNodes);
       }
     });
+    mutations.filter(mutation => mutation.type === 'characterData')
+      .filter(mutation => addedNodes.indexOf(mutation.target) === -1)
+      .forEach(mutation => addedNodes.push(mutation.target));
+    removedNodes.push.apply(
+      removedNodes,
+      this.children.map(child => !!child ? child.domNode : null)
+        .filter(node => !!node && !node.parentNode)
+    );
     removedNodes.forEach((node: Node) => {
       // Check node has actually been removed
       // One exception is Chrome does not immediately remove IFRAMEs
